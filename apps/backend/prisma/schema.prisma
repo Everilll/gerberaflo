@@ -1,0 +1,113 @@
+datasource db {
+	provider = "postgresql"
+	url      = env("DATABASE_URL")
+}
+
+generator client {
+	provider = "prisma-client-js"
+}
+
+enum AdminRole {
+	SUPER_ADMIN
+	ADMIN
+}
+
+model Admin {
+	id           String    @id @default(cuid())
+	email        String    @unique
+	passwordHash String
+	name         String
+	role         AdminRole @default(ADMIN)
+	isActive     Boolean   @default(true)
+	deletedAt    DateTime?
+	createdAt    DateTime  @default(now())
+	updatedAt    DateTime  @updatedAt
+
+	@@map("admins")
+}
+
+model Branch {
+	id             String         @id @default(cuid())
+	name           String
+	slug           String         @unique
+	city           String
+	address        String?
+	whatsappNumber String
+	isActive       Boolean        @default(true)
+	deletedAt      DateTime?
+	createdAt      DateTime       @default(now())
+	updatedAt      DateTime       @updatedAt
+	flowers        FlowerBranch[]
+
+	@@map("branches")
+}
+
+model Category {
+	id          String   @id @default(cuid())
+	name        String
+	slug        String   @unique
+	description String?
+	isActive    Boolean  @default(true)
+	deletedAt   DateTime?
+	sortOrder   Int      @default(0)
+	createdAt   DateTime @default(now())
+	updatedAt   DateTime @updatedAt
+	flowers     Flower[]
+
+	@@map("categories")
+}
+
+model Flower {
+	id              String         @id @default(cuid())
+	name            String
+	slug            String         @unique
+	description     String?
+	price           Int // Stored in IDR
+	isActive        Boolean        @default(true)
+	isFeatured      Boolean        @default(false)
+	colors          String[] // Array untuk filter warna (e.g. ["RED", "PINK"])
+	views           Int            @default(0) // Counter popularitas produk
+	deletedAt       DateTime?
+	categoryId      String
+	createdAt       DateTime       @default(now())
+	updatedAt       DateTime       @updatedAt
+
+	category        Category       @relation(fields: [categoryId], references: [id])
+	images          FlowerImage[]
+	branches        FlowerBranch[]
+
+	@@index([categoryId])
+	@@index([isActive])
+	@@index([isFeatured])
+	@@map("flowers")
+}
+
+model FlowerImage {
+	id         String   @id @default(cuid())
+	url        String
+	alt        String?
+	sortOrder  Int      @default(0)
+	isPrimary  Boolean  @default(false)
+	deletedAt  DateTime?
+	flowerId   String
+	createdAt  DateTime @default(now())
+
+	flower     Flower   @relation(fields: [flowerId], references: [id], onDelete: Cascade)
+
+	@@index([flowerId])
+	@@map("flower_images")
+}
+
+model FlowerBranch {
+	flowerId    String
+	branchId    String
+	isAvailable Boolean @default(true)
+
+	deletedAt   DateTime?
+	flower      Flower  @relation(fields: [flowerId], references: [id], onDelete: Cascade)
+	branch      Branch  @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
+	@@id([flowerId, branchId])
+	@@index([branchId])
+	@@map("flower_branches")
+}
