@@ -62,7 +62,6 @@ model Flower {
 	name            String
 	slug            String         @unique
 	description     String?
-	price           Int // Stored in IDR
 	isActive        Boolean        @default(true)
 	isFeatured      Boolean        @default(false)
 	colors          String[] // Array untuk filter warna (e.g. ["RED", "PINK"])
