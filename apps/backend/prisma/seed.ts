@@ -2,15 +2,10 @@ import 'dotenv/config';
 
 import { AdminRole, PrismaClient } from '@prisma/client';
 import { randomBytes, scryptSync } from 'node:crypto';
+import { HashingService } from 'src/common/hashing/hashing.service';
 
 const prisma = new PrismaClient();
-
-function hashPassword(password: string): string {
-  const salt = randomBytes(16).toString('hex');
-  const derivedKey = scryptSync(password, salt, 64).toString('hex');
-
-  return `${salt}:${derivedKey}`;
-}
+const hashingService = new HashingService();
 
 async function main() {
   const email = process.env.SEED_SUPERADMIN_EMAIL ?? 'superadmin@gerberaflo.local';
@@ -26,11 +21,13 @@ async function main() {
     return;
   }
 
+  const hashedPassword = hashingService.hash(password);
+
   await prisma.admin.create({
     data: {
       email,
       name,
-      passwordHash: hashPassword(password),
+      passwordHash: hashedPassword,
       role: AdminRole.SUPER_ADMIN,
       isActive: true,
     },
