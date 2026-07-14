@@ -5,6 +5,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { PrismaExceptionFilter } from './common/filters/prisma-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
+import { createValidationPipe } from './common/config/validation.pipe.config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -17,17 +18,6 @@ async function bootstrap() {
     origin: allowedOrigins,
     methods: ['GET', 'POST', 'PATCH', 'DELETE'],
   });
-
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-      transformOptions: {
-        enableImplicitConversion: true,
-      },
-    }),
-  );
 
   const config = new DocumentBuilder()
     .setTitle('gerberaflo API')
@@ -51,11 +41,14 @@ async function bootstrap() {
     },
   });
 
+  app.useGlobalPipes(createValidationPipe());
+  
+  app.useGlobalInterceptors(new TransformInterceptor());
+
   app.useGlobalFilters(
     new GlobalExceptionFilter(),
     new PrismaExceptionFilter(),
   );
-  app.useGlobalInterceptors(new TransformInterceptor());
 
   await app.listen(process.env.PORT ?? 3000);
 }
