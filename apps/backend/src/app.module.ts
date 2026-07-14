@@ -6,6 +6,7 @@ import { UploadModule } from './upload/upload.module';
 import { AuthModule } from './auth/auth.module';
 import { HashingModule } from './common/hashing/hashing.module';
 import { AppConfigModule } from './common/config/config.module';
+import { ProjectConfigModule } from './config/app-config.module';
 
 @Module({
   imports: [
@@ -13,7 +14,8 @@ import { AppConfigModule } from './common/config/config.module';
     UploadModule,
     AppConfigModule,
     AuthModule,
-    HashingModule
+    HashingModule,
+    ProjectConfigModule,
   ],
   controllers: [AppController],
   providers: [AppService],
