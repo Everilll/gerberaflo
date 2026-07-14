@@ -7,20 +7,6 @@ import {
 } from '@nestjs/common';
 import { Observable, tap, catchError, throwError } from 'rxjs';
 
-/**
- * Log tiap request masuk & response keluar (method, url, status, durasi).
- * Error tetep di-rethrow apa adanya biar tetep ketangkep exception filter
- * (GlobalExceptionFilter / PrismaExceptionFilter) — interceptor ini
- * cuma numpang log, gak nge-swallow atau ubah response.
- *
- * Pasang PALING LUAR di antara global interceptor lain (termasuk
- * TransformInterceptor), biar durasi yang ke-log itu total end-to-end:
- *
- *   app.useGlobalInterceptors(
- *     new LoggerInterceptor(),
- *     new TransformInterceptor(),
- *   );
- */
 @Injectable()
 export class LoggerInterceptor implements NestInterceptor {
   private readonly logger = new Logger('HTTP');
@@ -46,7 +32,7 @@ export class LoggerInterceptor implements NestInterceptor {
         this.logger.warn(
           `<-x ${method} ${originalUrl} ${status} +${duration}ms — ${err?.message ?? 'Unknown error'} (ip: ${ip})`,
         );
-        // Lempar lagi apa adanya, biar exception filter yang handle response-nya
+        
         return throwError(() => err);
       }),
     );

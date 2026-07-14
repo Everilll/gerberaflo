@@ -1,11 +1,11 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { ValidationPipe } from '@nestjs/common';
 import { PrismaExceptionFilter } from './common/filters/prisma-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { createValidationPipe } from './common/config/validation.pipe.config';
+import { LoggerInterceptor } from './common/interceptors/logger.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -42,8 +42,11 @@ async function bootstrap() {
   });
 
   app.useGlobalPipes(createValidationPipe());
-  
-  app.useGlobalInterceptors(new TransformInterceptor());
+
+  app.useGlobalInterceptors(
+    new TransformInterceptor(),
+    new LoggerInterceptor(),
+    );
 
   app.useGlobalFilters(
     new GlobalExceptionFilter(),
