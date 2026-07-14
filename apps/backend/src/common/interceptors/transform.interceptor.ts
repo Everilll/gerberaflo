@@ -15,27 +15,81 @@ export interface StandardResponse<T> {
   timestamp: string;
 }
 
+/**
+ * Return this instance if you want to return paginated data with meta information.
+ * Example: return new Paginated(items, { page, limit, total });
+ */
+export class Paginated<T> {
+  constructor(
+    public data: T[],
+    public meta: Record<string, any>,
+  ) {}
+}
+
+/**
+ * Return this instance if you want to bypass wrapping entirely
+ * (except for StreamableFile which is automatically bypassed).
+ * Example: return new RawResponse({ custom: 'shape' });
+ */
+export class RawResponse<T> {
+  constructor(public payload: T) {}
+}
+
+/**
+ * Return this instance if you want to provide a custom message while still wrapping the response.
+ * Example: return new MessageResponse(null, 'User berhasil dihapus');
+ */
+export class MessageResponse<T> {
+  constructor(
+    public payload: T,
+    public message: string,
+  ) {}
+}
+
 @Injectable()
 export class TransformInterceptor<T>
-  implements NestInterceptor<T, StandardResponse<T> | StreamableFile> {
+  implements NestInterceptor<T, StandardResponse<T> | StreamableFile | any>
+{
   intercept(
     context: ExecutionContext,
     next: CallHandler,
-  ): Observable<StandardResponse<T> | StreamableFile> {
-
+  ): Observable<StandardResponse<T> | StreamableFile | any> {
     return next.handle().pipe(
-      map((data) => {
+      map((result) => {
         const statusCode = context.switchToHttp().getResponse().statusCode;
-        // Bypass wrapping for binary/stream responses (e.g. PDF download)
-        if (data instanceof StreamableFile) return data;
 
-        // If the return object contains both data and meta, keep it intact to preserve pagination
-        const isPaginated = data && typeof data === 'object' && 'data' in data && 'meta' in data;
+        // Totally bypass wrapping for StreamableFile (used for file downloads)
+        if (result instanceof StreamableFile) return result;
 
+        // Explicitly bypass wrapping
+        if (result instanceof RawResponse) return result.payload;
+
+        // Pagination
+        if (result instanceof Paginated) {
+          return {
+            statusCode,
+            message: 'Success',
+            data: result.data,
+            meta: result.meta,
+            timestamp: new Date().toISOString(),
+          };
+        }
+
+        // Custom message
+        if (result instanceof MessageResponse) {
+          return {
+            statusCode,
+            message: result.message,
+            data: result.payload,
+            timestamp: new Date().toISOString(),
+          };
+        }
+
+        // Standard response
         return {
           statusCode,
-          message: data?.message ?? 'Success',
-          data: isPaginated ? data : (data?.data !== undefined ? data.data : data),
+          message: 'Success',
+          data: result,
           timestamp: new Date().toISOString(),
         };
       }),
